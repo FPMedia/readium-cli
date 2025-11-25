@@ -2,7 +2,8 @@ FROM --platform=$BUILDPLATFORM golang:1-bookworm@sha256:ee420c17fa013f71eca6b35c
 ARG BUILDARCH TARGETOS TARGETARCH
 ARG NO_SNAPSHOT=false
 
-# Install GoReleaser
+# Install GoReleaser and busybox-static (provides /bin/sh for the final image).
+RUN apt-get update && apt-get install -y --no-install-recommends wget busybox-static && rm -rf /var/lib/apt/lists/*
 RUN wget --no-verbose "https://github.com/goreleaser/goreleaser/releases/download/v2.8.2/goreleaser_2.8.2_$BUILDARCH.deb"
 RUN dpkg -i "goreleaser_2.8.2_$BUILDARCH.deb"
 
@@ -34,6 +35,10 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH GOAMD64=v2 GOARM=7 \
 
 # Produces very small images
 FROM gcr.io/distroless/static-debian12 AS packager
+
+# Provide /bin/sh for entrypoint wrappers (Railway start command uses /bin/sh -c ...)
+COPY --from=builder /bin/busybox /bin/busybox
+COPY --from=builder /bin/busybox /bin/sh
 
 # Extra metadata
 LABEL org.opencontainers.image.source="https://github.com/readium/cli"
