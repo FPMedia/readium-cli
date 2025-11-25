@@ -69,7 +69,7 @@ In Railway UI, go to your service → Variables and add:
 1. In Railway UI, go to your service → Settings → Config-as-code
 2. Railway should automatically detect `railway.toml` in your fork
 3. Verify the settings match what's in your `railway.toml` file
-4. The start command should include S3 flags with environment variable references, call the binary at `/opt/readium`, and wrap everything in `/bin/sh -c` so Railway expands `$PORT` and other env vars.
+4. The start command should include S3 flags with environment variable references, call the binary at `/opt/readium`, and use a single string like `"/bin/sh -c \"…\""` so Railway expands `$PORT` and other env vars.
 
 ## Step 6: Upload Publications to S3
 
