@@ -1,0 +1,14 @@
+[project]
+name = "readium-cli"
+
+[build]
+# Use your fork of the Readium CLI repo (update with your GitHub username).
+# Example: source = "https://github.com/YOUR_USERNAME/cli.git"
+source = "https://github.com/FPMedia/readium-cli"
+
+[deploy]
+# Railway injects $PORT; bind the server explicitly.
+# Publications are stored in AWS S3 and accessed via the s3:// scheme.
+# S3 credentials are provided via environment variables.
+startCommand = "readium serve -s s3,http,https --address 0.0.0.0 --port $PORT --s3-endpoint $S3_ENDPOINT --s3-access-key $S3_ACCESS_KEY --s3-secret-key $S3_SECRET_KEY --s3-region $S3_REGION"
+
