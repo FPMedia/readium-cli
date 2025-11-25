@@ -23,9 +23,8 @@ RUN git describe --tags --always
 # RUN git lfs pull && ls -alh publications
 
 # Run goreleaser
-RUN --mount=type=cache,id=go-build-cache,target=/root/.cache/go-build \
-    --mount=type=cache,id=go-pkg-cache,target=/go/pkg \
-    GOOS=$TARGETOS GOARCH=$TARGETARCH GOAMD64=v2 GOARM=7 \
+# Note: Cache mounts removed for Railway compatibility
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH GOAMD64=v2 GOARM=7 \
     goreleaser build --single-target --id readium --skip=validate $(case "$NO_SNAPSHOT" in yes|true|1) ;; *) echo "--snapshot";; esac) --output ./readium
 
 # Run tests
