@@ -69,7 +69,7 @@ In Railway UI, go to your service → Variables and add:
 1. In Railway UI, go to your service → Settings → Config-as-code
 2. Railway should automatically detect `railway.toml` in your fork
 3. Verify the settings match what's in your `railway.toml` file
-4. The start command should include S3 flags with environment variable references
+4. The start command should include S3 flags with environment variable references and call the binary at `/opt/readium` (the path set in the Docker image)
 
 ## Step 6: Upload Publications to S3
 
