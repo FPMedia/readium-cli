@@ -11,5 +11,10 @@ source = "https://github.com/FPMedia/readium-cli"
 # Publications are stored in AWS S3 and accessed via the s3:// scheme.
 # S3 credentials are provided via environment variables.
 # The binary lives at /opt/readium in the container, so call it explicitly.
-startCommand = "/opt/readium serve -s s3,http,https --address 0.0.0.0 --port $PORT --s3-endpoint $S3_ENDPOINT --s3-access-key $S3_ACCESS_KEY --s3-secret-key $S3_SECRET_KEY --s3-region $S3_REGION"
+# Use /bin/sh -c so that Railway env vars (PORT, S3_*) are expanded.
+startCommand = [
+  "/bin/sh",
+  "-c",
+  "/opt/readium serve -s s3,http,https --address 0.0.0.0 --port $PORT --s3-endpoint $S3_ENDPOINT --s3-access-key $S3_ACCESS_KEY --s3-secret-key $S3_SECRET_KEY --s3-region $S3_REGION"
+]
 
