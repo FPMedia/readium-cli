@@ -18,7 +18,8 @@ RUN go mod download
 # Copy local code to the container image.
 COPY . ./
 
-RUN git describe --tags --always
+# Git metadata isn't available in Railway's BuildKit context, so ignore errors.
+RUN git describe --tags --always || echo "Skipping git describe (no .git metadata)"
 
 # RUN git lfs pull && ls -alh publications
 
