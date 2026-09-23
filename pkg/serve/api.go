@@ -103,6 +103,13 @@ func (s *Server) getPublication(ctx context.Context, filename string) (*pub.Publ
 	return cp.Publication, cp.Remote, cp.CachedAt, nil
 }
 
+func (s *Server) writeError(w http.ResponseWriter, status int, message string, err error) {
+	slog.Error(message, "error", err)
+	w.Header().Set("access-control-allow-origin", "*")
+	w.Header().Set("content-type", "text/plain; charset=utf-8")
+	http.Error(w, message+": "+err.Error(), status)
+}
+
 func (s *Server) getManifest(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	filename := req.Context().Value(ContextPathKey).(string)
@@ -110,11 +117,7 @@ func (s *Server) getManifest(w http.ResponseWriter, req *http.Request) {
 	// Load the publication
 	publication, _, cachedAt, err := s.getPublication(req.Context(), filename)
 	if err != nil {
-		slog.Error("failed opening publication", "error", err)
-		w.WriteHeader(500)
-		if s.config.Debug {
-			w.Write([]byte(err.Error()))
-		}
+		s.writeError(w, http.StatusInternalServerError, "failed opening publication", err)
 		return
 	}
 
@@ -130,11 +133,7 @@ func (s *Server) getManifest(w http.ResponseWriter, req *http.Request) {
 
 	selfUrl, err := url.AbsoluteURLFromString(scheme + req.Host + rPath.String())
 	if err != nil {
-		slog.Error("failed creating self URL", "error", err)
-		w.WriteHeader(500)
-		if s.config.Debug {
-			w.Write([]byte(err.Error()))
-		}
+		s.writeError(w, http.StatusInternalServerError, "failed creating self URL", err)
 		return
 	}
 
@@ -152,11 +151,7 @@ func (s *Server) getManifest(w http.ResponseWriter, req *http.Request) {
 		j, err = json.MarshalIndent(publication.Manifest.ToMap(selfLink), "", s.config.JSONIndent)
 	}
 	if err != nil {
-		slog.Error("failed marshalling manifest JSON", "error", err)
-		w.WriteHeader(500)
-		if s.config.Debug {
-			w.Write([]byte(err.Error()))
-		}
+		s.writeError(w, http.StatusInternalServerError, "failed marshalling manifest JSON", err)
 		return
 	}
 
@@ -179,11 +174,7 @@ func (s *Server) getAsset(w http.ResponseWriter, r *http.Request) {
 	// Load the publication
 	publication, remote, _, err := s.getPublication(r.Context(), filename)
 	if err != nil {
-		slog.Error("failed opening publication", "error", err)
-		w.WriteHeader(500)
-		if s.config.Debug {
-			w.Write([]byte(err.Error()))
-		}
+		s.writeError(w, http.StatusInternalServerError, "failed opening publication", err)
 		return
 	}
 

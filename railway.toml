@@ -7,11 +7,9 @@ name = "readium-cli"
 source = "https://github.com/FPMedia/readium-cli"
 
 [deploy]
-# Railway injects $PORT; bind the server explicitly.
-# Publications are stored in Cloudflare R2 and accessed via the s3:// scheme
-# (R2 is S3-compatible). Credentials are provided via environment variables.
-# The binary lives at /opt/readium in the container, so call it explicitly.
-# Use /bin/sh -c so that Railway env vars (PORT, R2_*) are expanded.
-# --s3-use-path-style is required when pointing the AWS SDK at the R2 account endpoint.
-# R2's S3 API region is always "auto".
-startCommand = "/bin/sh -c \"/opt/readium serve -s s3,http,https --address 0.0.0.0 --port $PORT --s3-endpoint $R2_ENDPOINT --s3-access-key $R2_ACCESS_KEY_ID --s3-secret-key $R2_SECRET_ACCESS_KEY --s3-region auto --s3-use-path-style\""
+# Dockerfile deploys run the start command instead of ENTRYPOINT.
+# This command is the same script: it binds 0.0.0.0:$PORT and reads R2_*.
+# A different start command that does not listen on $PORT returns 502.
+startCommand = "/bin/sh /opt/railway-serve.sh"
+healthcheckPath = "/health"
+healthcheckTimeout = 120

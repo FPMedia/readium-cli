@@ -2,7 +2,7 @@
 
 This repo documents how to deploy the upstream [`readium/cli`](https://github.com/readium/cli) repository to Railway using a fork, with publications stored in [Cloudflare R2](https://developers.cloudflare.com/r2/). The fork contains the Railway configuration (`railway.toml`) while keeping the upstream codebase intact.
 
-R2 is S3-compatible, so the Readium CLI still uses the `s3` scheme and `s3://` URIs. The Railway start command points the existing S3 flags at your R2 account endpoint.
+R2 is S3-compatible, so the Readium CLI still uses the `s3` scheme and `s3://` URIs. The image entrypoint [`scripts/railway-serve.sh`](./scripts/railway-serve.sh) points the existing S3 flags at your R2 account endpoint and binds `0.0.0.0:$PORT`.
 
 ## Overview
 
@@ -77,18 +77,18 @@ In Railway UI, go to your service → Variables and add:
 | `R2_ACCOUNT_ID` | Cloudflare account ID (for reference / building the endpoint) | `4793d734c0b8e484dfc37ec392b5fa8a` |
 | `R2_BUCKET` | R2 bucket name (for reference) | `nicole-b-publications` |
 
-**Note:** `R2_ACCOUNT_ID` and `R2_BUCKET` are for documentation and upload tooling only. The start command uses `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY`. The Readium CLI accesses publications as `s3://bucket-name/path/to/file.epub`.
+**Note:** `R2_ACCOUNT_ID` and `R2_BUCKET` are for documentation and upload tooling only. The container entrypoint uses `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY`. The Readium CLI accesses publications as `s3://bucket-name/path/to/file.epub`.
 
 A local template lives in [`.env.example`](./.env.example). Copy it to `.env` for local testing; `.env` is gitignored.
 
-The Railway start command also sets `--s3-region auto` and `--s3-use-path-style`. R2 requires `region=auto`, and path-style addressing is required when the AWS SDK uses the account-level R2 endpoint.
+The entrypoint also sets `--s3-region auto` (or `R2_REGION` when that variable is set) and `--s3-use-path-style`. R2 requires `region=auto`, and path-style addressing is required when the AWS SDK uses the account-level R2 endpoint.
 
 ## Step 6: Verify Config-as-Code
 
 1. In Railway UI, go to your service → Settings → Config-as-code
 2. Railway should automatically detect `railway.toml` in your fork
 3. Verify the settings match what's in your `railway.toml` file
-4. The start command should include R2 flags with environment variable references, call the binary at `/opt/readium`, and use a single string like `"/bin/sh -c \"…\""` so Railway expands `$PORT` and other env vars.
+4. The start command in `railway.toml` is `/bin/sh /opt/railway-serve.sh`. On a Dockerfile service that command replaces `ENTRYPOINT`, so it has to be that script. The script binds `0.0.0.0:$PORT` and passes the R2 credentials. Any other start command that does not listen on `$PORT` makes the public URL return `502 Application failed to respond`.
 
 ## Step 7: Upload Publications to R2
 
@@ -216,7 +216,8 @@ The distroless image needs `/etc/mime.types`. That file is copied from the Debia
 - `R2_ENDPOINT` must be `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` (or the jurisdiction-specific host)
 - The account ID is 32 hex characters, copied from the Cloudflare dashboard URL (`dash.cloudflare.com/<ACCOUNT_ID>/...`). A shortened ID makes TLS fail with `handshake failure` before any object is read
 - Do not use `https://s3.amazonaws.com` or a regional AWS host
-- The start command must include `--s3-use-path-style` and `--s3-region auto`
+- The entrypoint passes `--s3-use-path-style` and `--s3-region auto`
+- A `502 Application failed to respond` means the process is not accepting connections on the port Railway proxies to. The start command must be `/bin/sh /opt/railway-serve.sh` so the process binds `$PORT`
 
 ### Publication Not Found
 

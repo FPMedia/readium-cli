@@ -37,7 +37,7 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH GOAMD64=v2 GOARM=7 \
 # Produces very small images
 FROM gcr.io/distroless/static-debian12 AS packager
 
-# Provide /bin/sh for entrypoint wrappers (Railway start command uses /bin/sh -c ...)
+# busybox provides /bin/sh so the entrypoint script can expand Railway env vars.
 COPY --from=builder /bin/busybox /bin/busybox
 COPY --from=builder /bin/busybox /bin/sh
 
@@ -53,12 +53,14 @@ COPY --from=builder /etc/mime.types /etc/mime.types
 # Add demo EPUBs to the container by default
 # ADD --chown=nonroot:nonroot https://readium-playground-files.storage.googleapis.com/demo/moby-dick.epub /srv/publications/
 
-# Copy built Go binary
-COPY --from=builder "/app/readium" /opt/
+# Copy built Go binary and the Railway entrypoint.
+COPY --from=builder "/app/readium" /opt/readium
+COPY --from=builder /app/scripts/railway-serve.sh /opt/railway-serve.sh
 
 EXPOSE 15080
 
 USER nonroot:nonroot
 
-ENTRYPOINT ["/opt/readium"]
-CMD ["serve", "-s", "http,https", "--address", "0.0.0.0"]
+# Railway's generated domain reaches the container on $PORT. This script binds
+# there. A service start command overrides this ENTRYPOINT, so leave it empty.
+ENTRYPOINT ["/bin/sh", "/opt/railway-serve.sh"]

@@ -15,6 +15,20 @@ const ContextPathKey ContextKey = "path"
 
 func (s *Server) Routes() *mux.Router {
 	r := mux.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// The publications site fetches manifests cross-origin. Without
+			// these headers a network or HTTP error is reported as "Failed to fetch".
+			w.Header().Set("access-control-allow-origin", "*")
+			w.Header().Set("access-control-allow-methods", "GET, HEAD, OPTIONS")
+			w.Header().Set("access-control-allow-headers", "*")
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
