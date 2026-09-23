@@ -201,6 +201,10 @@ docker run --rm \
 
 ## Troubleshooting
 
+### Image build fails while fetching mime types
+
+The distroless image needs `/etc/mime.types`. That file is copied from the Debian builder (`media-types`). Do not `ADD` it from `pagure.io`; that URL returns 404 and Railway fails the build with `invalid response status 404`.
+
 ### R2 Authentication Errors
 
 - Verify `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` are the S3 credentials from an [R2 API token](https://developers.cloudflare.com/r2/api/tokens/), not a general Cloudflare API token

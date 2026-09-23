@@ -2,8 +2,9 @@ FROM --platform=$BUILDPLATFORM golang:1-bookworm@sha256:ee420c17fa013f71eca6b35c
 ARG BUILDARCH TARGETOS TARGETARCH
 ARG NO_SNAPSHOT=false
 
-# Install GoReleaser and busybox-static (provides /bin/sh for the final image).
-RUN apt-get update && apt-get install -y --no-install-recommends wget busybox-static && rm -rf /var/lib/apt/lists/*
+# Install GoReleaser, busybox-static (/bin/sh for the Railway start command),
+# and media-types (/etc/mime.types, copied into the distroless image below).
+RUN apt-get update && apt-get install -y --no-install-recommends wget busybox-static media-types && rm -rf /var/lib/apt/lists/*
 RUN wget --no-verbose "https://github.com/goreleaser/goreleaser/releases/download/v2.8.2/goreleaser_2.8.2_$BUILDARCH.deb"
 RUN dpkg -i "goreleaser_2.8.2_$BUILDARCH.deb"
 
@@ -43,12 +44,11 @@ COPY --from=builder /bin/busybox /bin/sh
 # Extra metadata
 LABEL org.opencontainers.image.source="https://github.com/readium/cli"
 
-# Add Fedora's mimetypes (pretty up-to-date and expansive)
-# since the distroless container doesn't have any. Go uses
-# this file as part of its mime package, and readium/go-toolkit
-# has a mediatype package that falls back to Go's mime
-# package to discover a file's mimetype when all else fails.
-ADD https://pagure.io/mailcap/raw/master/f/mime.types /etc/
+# Distroless has no mime database. Go's mime package, and go-toolkit's
+# mediatype fallback, read /etc/mime.types. Copy Debian's file from the
+# builder instead of fetching it; the old pagure.io mailcap URL returns 404
+# and fails the Railway build.
+COPY --from=builder /etc/mime.types /etc/mime.types
 
 # Add demo EPUBs to the container by default
 # ADD --chown=nonroot:nonroot https://readium-playground-files.storage.googleapis.com/demo/moby-dick.epub /srv/publications/
