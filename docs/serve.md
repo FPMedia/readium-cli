@@ -35,7 +35,26 @@ Many services provide an S3 compatible API. The `serve` command is fully compati
     ```sh
     readium serve -s s3 --s3-endpoint https://example.com/endpoint --s3-access-key {access-key} --s3-secret-key {secret-key}
     ```
-    
+
+### Cloudflare R2
+
+[Cloudflare R2](https://developers.cloudflare.com/r2/) is S3-compatible. Point the existing S3 flags at your R2 account endpoint and keep using `s3://{bucket}/{path-to-file}` URIs.
+
+Create an [R2 API token](https://developers.cloudflare.com/r2/api/tokens/) (Object Read is enough to stream publications), then:
+
+```sh
+readium serve -s s3 \
+  --s3-endpoint https://<ACCOUNT_ID>.r2.cloudflarestorage.com \
+  --s3-access-key {access-key-id} \
+  --s3-secret-key {secret-access-key} \
+  --s3-region auto \
+  --s3-use-path-style
+```
+
+`--s3-region auto` is required by the S3 SDK when talking to R2. `--s3-use-path-style` is required when the endpoint is the account-level host (`https://<ACCOUNT_ID>.r2.cloudflarestorage.com`). For an EU-jurisdiction bucket, use `https://<ACCOUNT_ID>.eu.r2.cloudflarestorage.com`.
+
+See [README-RAILWAY.md](../README-RAILWAY.md) for deploying this server on Railway with R2.
+
 ### Required flags
 
 | Flag | Description |
@@ -49,6 +68,7 @@ Many services provide an S3 compatible API. The `serve` command is fully compati
 | Flag | Description |
 | ---- | ----------- |
 | `--s3-region` | Region for the S3 service. Defaults to `auto`. |
+| `--s3-use-path-style` | Use path-style bucket URLs instead of virtual-hosted style. Required for Cloudflare R2 account endpoints. |
 
 ## Using GCS
 
@@ -121,7 +141,7 @@ Each scheme supports a dedicated URI scheme:
 | Filesystem | `file://` | Path to a given file relative to the path provided in `--file-directory`.
 | HTTP | `http://` | URL |
 | HTTPS | `https://` | URL |
-| S3 | `s3://` | Path to a bucket, followed by a path to a file (key) in that bucket: `s3://{bucket}/{path-to-file}` |
+| S3 / Cloudflare R2 | `s3://` | Path to a bucket, followed by a path to a file (key) in that bucket: `s3://{bucket}/{path-to-file}`. R2 uses this same `s3://` URI scheme. |
 | Google Cloud Storage | `gs://` | Path to a bucket, followed by a path to a file (key) in that bucket: `gs://{bucket}/{path-to-file}` |
 
 Once calculated, the URI scheme and path to the file have to be [base64url](https://datatracker.ietf.org/doc/html/rfc4648#section-5) encoded in order to generate a path to a manifest.

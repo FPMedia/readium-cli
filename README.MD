@@ -10,6 +10,10 @@ Multiplatform builds are available directly from the [releases section](https://
 
 As an alternative, to install `readium` in `~/go/bin`, run `make install`. Use `make build` to build the binary in the current directory.
 
+## Deploying on Railway with Cloudflare R2
+
+This fork deploys `serve` on Railway and streams publications from [Cloudflare R2](https://developers.cloudflare.com/r2/) via the S3-compatible API. Copy [`.env.example`](./.env.example) to `.env`, add an R2 API token, and follow [README-RAILWAY.md](./README-RAILWAY.md).
+
 ## List of commands
 
 | Command | Description |
